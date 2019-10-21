@@ -19,7 +19,7 @@
 module System.Win32.DebugApi where
 
 import Control.Exception( bracket_ )
-import Data.Word        ( Word8, Word32 )
+import Data.Word        ( Word8, Word64 )
 import Foreign          ( Ptr, nullPtr, ForeignPtr, mallocForeignPtrBytes
                         , peekByteOff, plusPtr, allocaBytes, castPtr, poke
                         , withForeignPtr, Storable, sizeOf, peek, pokeByteOff )
@@ -33,7 +33,7 @@ import System.Win32.Types   ( HANDLE, BOOL, WORD, DWORD, failIf_, failWith
 type PID = DWORD
 type TID = DWORD
 type DebugEventId = (PID, TID)
-type ForeignAddress = Word32
+type ForeignAddress = Word64
 
 type PHANDLE = Ptr ()
 type THANDLE = Ptr ()
