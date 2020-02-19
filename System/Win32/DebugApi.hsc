@@ -19,6 +19,7 @@
 module System.Win32.DebugApi where
 
 import Control.Exception( bracket_ )
+import Control.Monad
 import Data.Word        ( Word8, Word64 )
 import Foreign          ( Ptr, nullPtr, ForeignPtr, mallocForeignPtrBytes
                         , peekByteOff, plusPtr, allocaBytes, castPtr, poke
@@ -236,18 +237,18 @@ pokeProcessMemory proc addr size buf =
     failIf_ not "pokeProcessMemory: WriteProcessMemory" $
         c_WriteProcessMemory proc (plusPtr nullPtr $ fromIntegral addr) (castPtr buf) (fromIntegral size) nullPtr
 
-withProcessMemory :: PHANDLE -> ForeignAddress -> Int -> (Ptr a -> IO b) -> IO b
-withProcessMemory proc addr size act = allocaBytes size $ \buf -> do
-    peekProcessMemory proc addr size buf
+withProcessMemory :: PHANDLE -> ForeignAddress -> Int -> (Bool, Bool) -> (Ptr a -> IO b) -> IO b
+withProcessMemory proc addr size (read, write) act = allocaBytes size $ \buf -> do
+    when read $ peekProcessMemory proc addr size buf
     res <- act buf
-    pokeProcessMemory proc addr size buf
+    when write $ pokeProcessMemory proc addr size buf
     return res
 
 peekP :: (Storable a) => PHANDLE -> ForeignAddress -> IO a
-peekP proc addr = fixIO $ \res -> withProcessMemory proc addr (sizeOf res) peek
+peekP proc addr = fixIO $ \res -> withProcessMemory proc addr (sizeOf res) (True, False) peek
 
 pokeP :: (Storable a) => PHANDLE -> ForeignAddress -> a -> IO ()
-pokeP proc addr v = withProcessMemory proc addr (sizeOf v) $ \buf -> poke buf v
+pokeP proc addr v = withProcessMemory proc addr (sizeOf v) (False, True) $ \buf -> poke buf v
 
 --------------------------------------------------------------------------
 -- Thread Control
